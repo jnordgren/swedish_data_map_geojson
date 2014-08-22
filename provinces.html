@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!--
+	Province data Made with Natural Earth. 
+	www.naturalearthdata.com
+	
+	Compiled by:
+		JNordgren, jnordgren@gmail.com
+	
+	Hope its useful to you!
+-->
+<meta charset="utf-8">
+<style>
+
+/* CSS-Styling */
+path{
+/*
+    fill:#666666;
+*/
+    stroke:#999999;
+    stroke-width: 0px;
+    pointer-events:all;
+     z-index: 2;
+}
+path:hover{
+    fill:#999;
+    stroke:#999999;
+    z-index: 99;
+}
+</style>
+<body>
+	<div id="map">
+		
+		
+	</div>
+	<div id="test_div">
+		<p id="output"> </p>
+	</div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.1.min.js"></script>
+
+<script>
+
+	//Used for coloring provinces.
+	var colors =["red","green","blue","yellow","purple"];
+	var width  = 600;
+	var height = 800;
+  
+	var zoom = d3.behavior.zoom()
+		.translate([0, 0])
+		.scale(1)
+		.scaleExtent([1, 20])
+		.on("zoom", zoomed);
+    
+	var svg_provinces = d3.select("#map").append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				.call(zoom);
+		
+    var provinces_main_group= svg_provinces.append("g");   
+
+	d3.json("GeoJSON/swedish_provinces.geojson", function(json) {
+ 
+		//Centering from stackoverflow thread.
+		var center = d3.geo.centroid(json)	//GeoJSON
+		var scale  = 1;
+		var offset = [width/2, height/2];
+		var projection = d3.geo.mercator().scale(scale).center(center).translate(offset);
+		var path = d3.geo.path().projection(projection);
+		var bounds  = path.bounds(json);
+  
+		var hscale  = scale*width  / (bounds[1][0] - bounds[0][0]);
+		var vscale  = scale*height / (bounds[1][1] - bounds[0][1]);
+		var scale   = (hscale < vscale) ? hscale : vscale;
+		var offset  = [width - (bounds[0][0] + bounds[1][0])/2,
+							height - (bounds[0][1] + bounds[1][1])/2];
+
+      // new projection
+		projection = d3.geo.mercator().center(center)
+			.scale(scale).translate(offset);
+		path = path.projection(projection);
+      	
+	
+		provinces_main_group.selectAll("path")
+			.data(json.features)
+			.enter().append("path")
+			.attr("d", path)
+			.attr("fill",function(d){return colors[d.properties.color];})
+			.attr("onclick",function(d){ return "display_select_name('"+d.properties.name+"','"+d.properties.l_id+"')";});
+		});
+
+function zoomed() {
+	provinces_main_group.selectAll("path").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+}
+
+
+//Callback function for onclick.
+function display_select_name(name,id){ 
+	 $('#output').text(name + ";" + id);
+ }
+</script>
