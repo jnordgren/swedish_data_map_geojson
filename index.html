@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!--
+	Data source: © OpenStreetMaps  http://wiki.openstreetmap.org/wiki/WikiProject_Sweden/Kommuner.
+	Open Data Commons Open Database License (ODbL).
+	see http://www.openstreetmap.org/copyright
+	
+	And Natural Earth. 
+		www.naturalearthdata.com
+-->
+<meta charset="utf-8">
+<style>
+
+/* CSS-Styling */
+path{
+/*
+    fill:#666666;
+*/
+    stroke:#999999;
+    stroke-width: 0px;
+    pointer-events:all;
+     z-index: 2;
+}
+path:hover{
+    fill:#999;
+    stroke:#999999;
+    z-index: 99;
+}
+
+</style>
+<body>
+	<div id="county_map" style="float:left;	border-right:solid 1px #ff0000;"></div>
+	<div id="province_map" style="border-right:solid 1px #ff0000;"></div>
+	<div id="county" style="float:left;">
+		<p id="c_output">"COUNTY"</p>
+	</div>
+	<div id="provin">
+		<p id="p_output">"PROVINCE"</p>
+	</div>
+	<div>
+		<p>Zoomable maps, using the combined GeoJSON file.</p>
+	</div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.1.min.js"></script>
+
+<script>
+
+	//Used for coloring provinces.
+	var colors = ["green","red","green","blue","yellow"];
+	var width  = 300;
+	var height = 800;
+  
+	var c_zoom = d3.behavior.zoom()
+		.translate([0, 0])
+		.scale(1)
+		.scaleExtent([1, 20])
+		.on("zoom", c_zoomed);
+	var p_zoom = d3.behavior.zoom()
+		.translate([0, 0])
+		.scale(1)
+		.scaleExtent([1, 20])
+		.on("zoom", p_zoomed);
+    
+	var svg_counties = d3.select("#county_map").append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				.call(c_zoom);
+		
+    var counties_main_group= svg_counties.append("g");   
+    
+    var svg_provinces = d3.select("#province_map").append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				.call(p_zoom);
+		
+    var provinces_main_group= svg_provinces.append("g");   
+
+	d3.json("GeoJSON/combined.geojson", function(json) {
+ 
+		//Centering from stackoverflow thread.
+      var center = d3.geo.centroid(json.counties)	//GeoJSON
+      var scale  = 1;
+      var offset = [width/2, height/2];
+      var projection = d3.geo.mercator().scale(scale).center(center)
+          .translate(offset);
+
+      // create the path
+      var path = d3.geo.path().projection(projection);
+
+      // using the path determine the bounds of the current map and use 
+      // these to determine better values for the scale and translation
+      var bounds  = path.bounds(json.counties);
+  
+      var hscale  = scale*width  / (bounds[1][0] - bounds[0][0]);
+      var vscale  = scale*height / (bounds[1][1] - bounds[0][1]);
+      var scale   = (hscale < vscale) ? hscale : vscale;
+      var offset  = [width - (bounds[0][0] + bounds[1][0])/2,
+                        height - (bounds[0][1] + bounds[1][1])/2];
+
+      // new projection
+      projection = d3.geo.mercator().center(center)
+        .scale(scale).translate(offset);
+      path = path.projection(projection);
+      	
+      counties_main_group.selectAll("path")
+      .data(json.counties.features)
+      .enter().append("path")
+      .attr("d", path)
+        .attr("stroke-width", "1")
+        .attr("stroke","black")
+        .attr("fill",function(d){return colors[d.properties.color];})
+        .attr("onclick",function(d){ return "c_display_select_name('"+d.properties.name+"','"+d.properties.k_id+"')";});
+        
+        
+        
+        		//Centering from stackoverflow thread.
+      var center = d3.geo.centroid(json.provinces)	//GeoJSON
+      var scale  = 1;
+      var offset = [width/2, height/2];
+      var projection = d3.geo.mercator().scale(scale).center(center)
+          .translate(offset);
+
+      // create the path
+      var path = d3.geo.path().projection(projection);
+
+      // using the path determine the bounds of the current map and use 
+      // these to determine better values for the scale and translation
+      var bounds  = path.bounds(json.provinces);
+  
+      var hscale  = scale*width  / (bounds[1][0] - bounds[0][0]);
+      var vscale  = scale*height / (bounds[1][1] - bounds[0][1]);
+      var scale   = (hscale < vscale) ? hscale : vscale;
+      var offset  = [width - (bounds[0][0] + bounds[1][0])/2,
+                        height - (bounds[0][1] + bounds[1][1])/2];
+
+      // new projection
+      projection = d3.geo.mercator().center(center)
+        .scale(scale).translate(offset);
+      path = path.projection(projection);
+      	
+      provinces_main_group.selectAll("path")
+      .data(json.provinces.features)
+      .enter().append("path")
+      .attr("d", path)
+        .attr("stroke-width", "1")
+        .attr("stroke","black")
+        .attr("fill",function(d){return colors[d.properties.color];})
+        .attr("onclick",function(d){ return "p_display_select_name('"+d.properties.name+"','"+d.properties.l_id+"')";});
+  });
+
+function c_zoomed() {
+	counties_main_group.selectAll("path").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+}
+function p_zoomed() {
+	provinces_main_group.selectAll("path").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+}
+
+
+//Callback function for onclick.
+function p_display_select_name(name,id){ 
+	 $('#p_output').text(name + ";" + id);
+ }
+//Callback function for onclick.
+function c_display_select_name(name,id){ 
+	 $('#c_output').text(name + ";" + id);
+ }
+</script>
