@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!--
+	Data source: © OpenStreetMaps  http://wiki.openstreetmap.org/wiki/WikiProject_Sweden/Kommuner.
+	Open Data Commons Open Database License (ODbL).
+	see http://www.openstreetmap.org/copyright
+	
+	And Natural Earth. 
+		www.naturalearthdata.com
+-->
+<meta charset="utf-8">
+<style>
+
+/* CSS-Styling */
+path{
+/*
+    fill:#666666;
+*/
+    stroke:#999999;
+    stroke-width: 0px;
+    pointer-events:all;
+     z-index: 2;
+}
+path:hover{
+    fill:#999;
+    stroke:#999999;
+    z-index: 99;
+}
+
+</style>
+<body>
+	<div id="county_map" style="float:left;	border-right:solid 1px #ff0000;"></div>
+	<div id="province_map" style="border-right:solid 1px #ff0000;"></div>
+	<div id="county" style="float:left;">
+
+		
+		<p id="output"> </p>
+		<p>Stasticis from SCB.se</p>
+	</div>
+
+	<div>
+		<p>Zoomable maps, using the combined GeoJSON file. Displaying the Swedish "robin-hood" tax. in SEK per capita for each county. RED=pays alot, BLUE=pays some, GREEN= Recieves.</p>
+	</div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.1.min.js"></script>
+  <script type="text/javascript" src="js/jquery.ajax-cross-origin.min.js"></script>
+
+
+<script>
+
+	//Used for coloring provinces.
+	var lookup = {"0114":"4440","0115":"3199","0117":"1162","0120":"3095","0123":"5816","0125":"839","0126":"7601","0127":"14133","0128":"5693","0136":"7729","0138":"3591","0139":"6038","0140":"2952","0160":"-4451","0162":"-12637","0163":"1877","0180":"-616","0181":"14061","0182":"-178","0183":"3360","0184":"-4989","0186":"-4788","0187":"427","0188":"7195","0191":"8069","0192":"6793","0305":"1925","0319":"9125","0330":"3464","0331":"12155","0360":"12255","0380":"2813","0381":"5622","0382":"5390","0428":"13185","0461":"7873","0480":"7086","0481":"3986","0482":"13586","0483":"12339","0484":"12361","0486":"5177","0488":"669","0509":"14160","0512":"13392","0513":"11406","0560":"10239","0561":"10402","0562":"6991","0563":"10553","0580":"5604","0581":"9367","0582":"7129","0583":"9817","0584":"8617","0586":"8682","0604":"9046","0617":"7398","0642":"9825","0643":"7232","0662":"8882","0665":"9018","0680":"6276","0682":"11407","0683":"6551","0684":"13928","0685":"9488","0686":"8010","0687":"12297","0760":"14166","0761":"14109","0763":"14354","0764":"11744","0765":"5724","0767":"11861","0780":"7149","0781":"7566","0821":"19307","0834":"14082","0840":"7612","0860":"13104","0861":"7759","0862":"9462","0880":"5676","0881":"10432","0882":"4692","0883":"9784","0884":"9437","0885":"12046","0980":"10066","1060":"7875","1080":"7721","1081":"8793","1082":"6622","1083":"7982","1214":"11028","1230":"4620","1231":"13617","1233":"-850","1256":"12590","1257":"14459","1260":"13553","1261":"4049","1262":"-419","1263":"5962","1264":"9741","1265":"8742","1266":"10483","1267":"8638","1270":"12150","1272":"9556","1273":"12294","1275":"14502","1276":"11319","1277":"14438","1278":"4412","1280":"13650","1281":"1622","1282":"14101","1283":"7936","1284":"5189","1285":"10351","1286":"4960","1287":"9008","1290":"10503","1291":"9625","1292":"5899","1293":"11072","1315":"12312","1380":"6414","1381":"8578","1382":"9319","1383":"5824","1384":"1103","1401":"3057","1402":"4000","1407":"4504","1415":"3262","1419":"688","1421":"4334","1427":"5340","1430":"11893","1435":"9698","1438":"15649","1439":"14139","1440":"6807","1441":"3700","1442":"9111","1443":"5140","1444":"9861","1445":"11856","1446":"7113","1447":"13474","1452":"10352","1460":"14157","1461":"15689","1462":"8384","1463":"10221","1465":"12192","1466":"10045","1470":"10115","1471":"8149","1472":"11166","1473":"11950","1480":"4686","1481":"1819","1482":"2562","1484":"6924","1485":"8494","1486":"10662","1487":"9237","1488":"10020","1489":"6452","1490":"8257","1491":"9675","1492":"13331","1493":"7935","1494":"5969","1495":"8607","1496":"3547","1497":"9494","1498":"9065","1499":"11960","1715":"10413","1730":"15578","1737":"16646","1760":"12884","1761":"2213","1762":"15809","1763":"10883","1764":"10010","1765":"18009","1766":"12235","1780":"5106","1781":"10578","1782":"16304","1783":"13348","1784":"10903","1785":"12801","1814":"9819","1860":"8657","1861":"9617","1862":"9945","1863":"15006","1864":"14959","1880":"8336","1881":"10210","1882":"6551","1883":"6895","1884":"8630","1885":"9387","1904":"10676","1907":"6720","1960":"8010","1961":"10347","1962":"8618","1980":"5828","1981":"10689","1982":"9498","1983":"10023","1984":"10576","2021":"16985","2023":"12985","2026":"9440","2029":"7500","2031":"13046","2034":"15953","2039":"19527","2061":"5883","2062":"9131","2080":"6606","2081":"9678","2082":"7095","2083":"9378","2084":"6468","2085":"8997","2101":"11966","2104":"10546","2121":"12146","2132":"13618","2161":"14346","2180":"6039","2181":"6244","2182":"9770","2183":"11468","2184":"8823","2260":"14248","2262":"9541","2280":"9561","2281":"5171","2282":"12183","2283":"14454","2284":"8037","2303":"21309","2305":"22989","2309":"15282","2313":"21255","2321":"14787","2326":"22867","2361":"19705","2380":"7137","2401":"15396","2403":"26146","2404":"17292","2409":"15943","2417":"18417","2418":"15500","2421":"20874","2422":"25253","2425":"24829","2460":"12008","2462":"24983","2463":"25155","2480":"3020","2481":"13027","2482":"8020","2505":"16270","2506":"16573","2510":"17203","2513":"18994","2514":"11541","2518":"23160","2521":"23521","2523":"3759","2560":"14350","2580":"4814","2581":"4817","2582":"10200","2583":"15424","2584":"2404"};
+	//Alltså dom som får mest
+	var var_max =  26146;
+	//~ Math.max.apply(null,
+                        //~ Object.keys(lookup).map(function(e) {
+                                //~ return lookup[e];
+                        //~ }));
+                     //~
+                     
+     //Alltså betalar mest
+	var var_min = Math.abs(-12637); 
+	 //~ Math.min.apply(null,
+                        //~ Object.keys(lookup).map(function(e) {
+                                //~ return lookup[e];
+                        //~ }));
+	console.log("max");
+	console.log(var_max);
+	//~ console.log(lookup[0180]);
+	var width  = 300;
+	var height = 800;
+  
+	var c_zoom = d3.behavior.zoom()
+		.translate([0, 0])
+		.scale(1)
+		.scaleExtent([1, 20])
+		.on("zoom", c_zoomed);
+    
+	var svg_counties = d3.select("#county_map").append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				.call(c_zoom);
+		
+    var counties_main_group= svg_counties.append("g");   
+
+	d3.json("GeoJSON/swedish_counties.geojson", function(json) {
+ 
+		//Centering from stackoverflow thread.
+      var center = d3.geo.centroid(json)	//GeoJSON
+      var scale  = 1;
+      var offset = [width/2, height/2];
+      var projection = d3.geo.mercator().scale(scale).center(center)
+          .translate(offset);
+
+      // create the path
+      var path = d3.geo.path().projection(projection);
+
+      // using the path determine the bounds of the current map and use 
+      // these to determine better values for the scale and translation
+      var bounds  = path.bounds(json);
+	
+      var hscale  = scale*width  / (bounds[1][0] - bounds[0][0]);
+      var vscale  = scale*height / (bounds[1][1] - bounds[0][1]);
+      var scale   = (hscale < vscale) ? hscale : vscale;
+      var offset  = [width - (bounds[0][0] + bounds[1][0])/2,
+                        height - (bounds[0][1] + bounds[1][1])/2];
+
+      // new projection
+      projection = d3.geo.mercator().center(center)
+        .scale(scale).translate(offset);
+      path = path.projection(projection);
+      	
+      counties_main_group.selectAll("path")
+      .data(json.features)
+      .enter().append("path")
+      .attr("d", path)
+        .attr("stroke-width", "1")
+        .attr("stroke","black")
+        .attr("fill",function(d){
+			
+
+			if( lookup[d.properties.k_id] < 0 ){
+				console.log("mindre än 0");
+				console.log(Math.abs( lookup[d.properties.k_id]));
+				console.log(d.properties.k_id);
+				console.log(d.properties.name);
+				var red = ((Math.abs( lookup[d.properties.k_id])/var_min)*255);
+				console.log("===");
+				var blue = 0;
+				if( red < 50){
+					var blue = 255-((Math.abs( lookup[d.properties.k_id])/var_min)*255);
+				}
+				
+				return "#" + componentToHex(red) + componentToHex(0) + componentToHex(blue);
+
+			}else{
+				
+				var green = ((Math.abs( lookup[d.properties.k_id])/var_max)*255);
+				var blue = 0;
+				if(green < 70){
+					green = 255;
+					blue = 255 - ((Math.abs( lookup[d.properties.k_id])/var_max)*255);
+				}
+				
+				return "#" + componentToHex(0) + componentToHex(green) + componentToHex(0);
+			}
+			
+			//~ return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+			
+			})
+        //~ .attr("onclick",function(d){ return "c_display_select_name('"+d.properties.name+"','"+d.properties.k_id+"')";})
+        .attr("onmouseover",function(d){ return "on_hoover('"+d.properties.name+"','"+d.properties.k_id+"')"; })       ;
+        
+  });
+
+function c_zoomed() {
+	counties_main_group.selectAll("path").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+}
+function componentToHex(c) {
+    var b = Math.ceil(c);
+    var hex = b.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+function on_hoover(name,id){
+	if( lookup[id] < 0 ){
+		$('#output').html(name +" betalar varje år: " + Math.abs(lookup[id])+ "kr per person");
+	}else{
+		$('#output').html(name +" får varje år: " + lookup[id]+ "kr per person");
+
+	}
+}
+
+
+</script>
